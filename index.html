@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduLead: 國中小校長主任甄選 策略分析與擬答系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF7; /* Warm neutral background */
+            color: #44403C; /* Stone 700 */
+        }
+
+        /* Chart Container Styling - Mandatory Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F5F5F4;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D6D3D1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A8A29E;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .active-tab {
+            border-bottom: 2px solid #0D9488; /* Teal 600 */
+            color: #0F766E; /* Teal 700 */
+            font-weight: 600;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Stone) with Teal and Terracotta Accents for a calm, professional academic tone. -->
+    <!-- Application Structure Plan: 
+         1. Hero Section: Brief intro.
+         2. Trend Dashboard: Two charts visualizing the 4 categories and key competencies (Radar & Bar).
+         3. Domain Explorer: Interactive cards for the 4 categories. Clicking reveals details (Keywords/Trends) without page reload.
+         4. Structured Answer Simulator: The core interactive element. A dropdown to select questions, followed by a step-by-step "reveal" interface for the structured answer (Intro -> Theory -> Strategy -> Conclusion). This enforces the "structure" learning.
+         5. Footer.
+         Rationale: This structure moves from high-level analysis to specific content exploration, ending with deep-dive application (simulation), mirroring the study process.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Radar Chart: To show the multi-faceted nature of leadership requirements (Legal, Curriculum, Ethics, etc.). Goal: Relationships.
+         2. Bar Chart: To show the weight/frequency of the 4 main exam categories. Goal: Inform/Compare.
+         3. Interactive Cards: For browsing the qualitative trends. Goal: Organize.
+         4. Step-by-Step Revealer: For the standard answers. Goal: Inform/Engage (Active Recall).
+         Confirming NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-teal-700 tracking-wide">EduLead</span>
+                    <span class="ml-2 text-sm text-stone-500 hidden sm:block">| 校長主任甄選策略系統</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="scrollToSection('dashboard')" class="text-stone-600 hover:text-teal-700 px-3 py-2 text-sm font-medium">趨勢分析</button>
+                    <button onclick="scrollToSection('domains')" class="text-stone-600 hover:text-teal-700 px-3 py-2 text-sm font-medium">四大範疇</button>
+                    <button onclick="scrollToSection('simulation')" class="bg-teal-600 text-white hover:bg-teal-700 px-4 py-2 rounded-md text-sm font-medium transition">試題擬答</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-stone-100 border-b border-stone-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-stone-800 tracking-tight mb-4">
+                國民中小學 <span class="text-teal-600">校長及主任甄選</span> 試題分析
+            </h1>
+            <p class="max-w-2xl mx-auto text-lg text-stone-600 mb-8">
+                系統化歸納歷屆試題趨勢，提供結構化標準擬答架構。從課程領導到行政危機處理，全方位掌握教育行政關鍵議題。
+            </p>
+            <div class="flex justify-center space-x-4">
+                <div class="flex items-center space-x-2 text-stone-500 text-sm">
+                    <span class="w-2 h-2 bg-teal-500 rounded-full"></span>
+                    <span>108 課綱深化</span>
+                </div>
+                <div class="flex items-center space-x-2 text-stone-500 text-sm">
+                    <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
+                    <span>數位轉型</span>
+                </div>
+                <div class="flex items-center space-x-2 text-stone-500 text-sm">
+                    <span class="w-2 h-2 bg-indigo-400 rounded-full"></span>
+                    <span>法律程序</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        
+        <!-- Section 1: Trend Dashboard -->
+        <section id="dashboard" class="py-12 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl font-bold text-stone-800">試題趨勢與核心素養分析</h2>
+                    <p class="mt-2 text-stone-500">視覺化呈現四大核心範疇比重與領導者必備能力向度。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <!-- Chart 1: Topic Distribution -->
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-100 shadow-sm">
+                        <h3 class="text-lg font-semibold text-stone-700 mb-4 text-center">考題範疇比重分析</h3>
+                        <div class="chart-container">
+                            <canvas id="topicChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-sm text-stone-500 text-center">
+                            *基於歷年試題關鍵字出現頻率之權重估算
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Competency Radar -->
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-100 shadow-sm">
+                        <h3 class="text-lg font-semibold text-stone-700 mb-4 text-center">領導者核心素養雷達圖</h3>
+                        <div class="chart-container">
+                            <canvas id="competencyChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-sm text-stone-500 text-center">
+                            *顯示各面向能力之均衡發展需求
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Strategic Domain Explorer -->
+        <section id="domains" class="py-12 bg-stone-50 border-t border-stone-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl font-bold text-stone-800">四大核心範疇探索</h2>
+                    <p class="mt-2 text-stone-500">點擊卡片以深入了解各範疇之關鍵議題與準備方向。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="domainGrid">
+                    <!-- Domain Cards will be injected by JS -->
+                </div>
+
+                <!-- Detailed View Area -->
+                <div id="domainDetail" class="mt-8 bg-white p-8 rounded-xl border border-stone-200 shadow-sm hidden transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 id="detailTitle" class="text-xl font-bold text-teal-700"></h3>
+                        <button onclick="closeDetail()" class="text-stone-400 hover:text-stone-600 font-bold text-xl">&times;</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="font-semibold text-stone-800 mb-2 border-b border-teal-100 pb-1">趨勢分析</h4>
+                            <p id="detailTrend" class="text-stone-600 leading-relaxed text-sm"></p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-stone-800 mb-2 border-b border-teal-100 pb-1">關鍵議題</h4>
+                            <ul id="detailIssues" class="space-y-2 text-sm text-stone-600"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Structured Answer Simulator -->
+        <section id="simulation" class="py-12 bg-white border-t border-stone-200">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl font-bold text-stone-800">結構化擬答模擬器</h2>
+                    <p class="mt-2 text-stone-500">選擇經典題型，演練「破題 → 理論 → 策略 → 結語」的標準應答邏輯。</p>
+                </div>
+
+                <!-- Controls -->
+                <div class="mb-8 max-w-xl mx-auto">
+                    <label for="questionSelect" class="block text-sm font-medium text-stone-700 mb-2">選擇模擬題型：</label>
+                    <select id="questionSelect" onchange="loadQuestion()" class="block w-full pl-3 pr-10 py-3 text-base border-stone-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md bg-stone-50 border shadow-sm">
+                        <option value="0">請選擇題目...</option>
+                        <option value="1">數位政策：班班有網路，生生用平板</option>
+                        <option value="2">課程領導：108課綱與 SDGs 校本課程</option>
+                        <option value="3">行政法規：不適任教師處理程序</option>
+                        <option value="4">領導理論：道德領導與身教</option>
+                        <option value="5">學生事務：學習動機低落 (自我決定論)</option>
+                    </select>
+                </div>
+
+                <!-- Simulation Area -->
+                <div id="simArea" class="hidden">
+                    <div class="bg-stone-50 p-6 rounded-t-xl border border-stone-200 border-b-0">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800 mb-2" id="simCategory"></span>
+                        <h3 class="text-lg font-bold text-stone-800" id="simQuestion"></h3>
+                    </div>
+                    
+                    <div class="border border-stone-200 rounded-b-xl bg-white overflow-hidden shadow-sm">
+                        <!-- Step 1: Foreword -->
+                        <div class="border-b border-stone-100">
+                            <button onclick="toggleStep('step1')" class="w-full text-left px-6 py-4 bg-white hover:bg-stone-50 focus:outline-none flex justify-between items-center group">
+                                <span class="font-semibold text-stone-700 group-hover:text-teal-700">一、破題 (前言)</span>
+                                <span id="icon-step1" class="text-stone-400 group-hover:text-teal-500 text-xl font-bold">+</span>
+                            </button>
+                            <div id="step1" class="hidden px-6 py-4 bg-teal-50/30 text-stone-600 text-sm leading-relaxed border-t border-stone-100"></div>
+                        </div>
+
+                        <!-- Step 2: Theory -->
+                        <div class="border-b border-stone-100">
+                            <button onclick="toggleStep('step2')" class="w-full text-left px-6 py-4 bg-white hover:bg-stone-50 focus:outline-none flex justify-between items-center group">
+                                <span class="font-semibold text-stone-700 group-hover:text-teal-700">二、政策與理論基礎</span>
+                                <span id="icon-step2" class="text-stone-400 group-hover:text-teal-500 text-xl font-bold">+</span>
+                            </button>
+                            <div id="step2" class="hidden px-6 py-4 bg-white text-stone-600 text-sm leading-relaxed border-t border-stone-100"></div>
+                        </div>
+
+                        <!-- Step 3: Strategy -->
+                        <div class="border-b border-stone-100">
+                            <button onclick="toggleStep('step3')" class="w-full text-left px-6 py-4 bg-white hover:bg-stone-50 focus:outline-none flex justify-between items-center group">
+                                <span class="font-semibold text-stone-700 group-hover:text-teal-700">三、具體執行策略</span>
+                                <span id="icon-step3" class="text-stone-400 group-hover:text-teal-500 text-xl font-bold">+</span>
+                            </button>
+                            <div id="step3" class="hidden px-6 py-4 bg-white text-stone-600 text-sm leading-relaxed border-t border-stone-100 space-y-2"></div>
+                        </div>
+
+                        <!-- Step 4: Conclusion -->
+                        <div>
+                            <button onclick="toggleStep('step4')" class="w-full text-left px-6 py-4 bg-white hover:bg-stone-50 focus:outline-none flex justify-between items-center group">
+                                <span class="font-semibold text-stone-700 group-hover:text-teal-700">四、結語 (願景)</span>
+                                <span id="icon-step4" class="text-stone-400 group-hover:text-teal-500 text-xl font-bold">+</span>
+                            </button>
+                            <div id="step4" class="hidden px-6 py-4 bg-orange-50/30 text-stone-600 text-sm leading-relaxed border-t border-stone-100 italic"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex justify-end space-x-3">
+                        <button onclick="expandAll()" class="text-sm text-teal-600 hover:text-teal-800 font-medium">展開全部</button>
+                        <span class="text-stone-300">|</span>
+                        <button onclick="collapseAll()" class="text-sm text-stone-500 hover:text-stone-700">收合全部</button>
+                    </div>
+                </div>
+                
+                <!-- Placeholder State -->
+                <div id="simPlaceholder" class="text-center py-12 bg-stone-50 rounded-xl border border-stone-200 border-dashed">
+                    <p class="text-stone-400 text-lg">👈 請先從上方選單選擇一個題目開始模擬</p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-stone-800 text-stone-300 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm mb-2">EduLead 國中小校長主任甄選擬答系統</p>
+            <p class="text-xs text-stone-500">Based on Source Report Analysis • Educational Administration Prep</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- Data Handling ---
+
+        // Domain Data (Section 2)
+        const domainData = [
+            {
+                id: 'curriculum',
+                icon: '🏫',
+                title: '課程領導與教學創新',
+                color: 'bg-blue-50 text-blue-700',
+                border: 'border-blue-200',
+                trend: '聚焦於「十二年國民基本教育課程綱要」（108 課綱）之深化實踐、教育數位轉型 (Digital Transformation) 及永續發展議題之融入。',
+                issues: [
+                    '數位學習精進方案 (生生用平板)',
+                    '永續發展目標 (SDGs) 融入課程',
+                    '跨領域素養導向課程設計',
+                    'AI 時代的未來人才培育'
+                ]
+            },
+            {
+                id: 'admin',
+                icon: '⚖️',
+                title: '行政管理與危機處理',
+                color: 'bg-red-50 text-red-700',
+                border: 'border-red-200',
+                trend: '強調法律程序之正當性 (Due Process)、校園危機管控機制及組織效能之提升，特別關注不適任教師之處理流程。',
+                issues: [
+                    '不適任教師處置 (校事會議)',
+                    '危機管理機制 (SOP, 蝴蝶效應)',
+                    '校務發展 PDCA 循環',
+                    '師資穩定與專業提升策略'
+                ]
+            },
+            {
+                id: 'leadership',
+                icon: '💡',
+                title: '領導理論與專業發展',
+                color: 'bg-amber-50 text-amber-700',
+                border: 'border-amber-200',
+                trend: '整合理性行政管理與感性領導哲學，重視領導者價值觀之傳遞與實踐，強調身教與專業社群之建立。',
+                issues: [
+                    '道德領導 (Moral Leadership)',
+                    '專業學習社群 (PLC) 之運作',
+                    '信任領導 (Trust-based)',
+                    '情緒與靈性領導'
+                ]
+            },
+            {
+                id: 'student',
+                icon: '🌱',
+                title: '學生事務與校園文化',
+                color: 'bg-emerald-50 text-emerald-700',
+                border: 'border-emerald-200',
+                trend: '關注學生心理素養、內在動機激發、特殊教育權益保障及校園美學環境之營造。',
+                issues: [
+                    '學習動機激發 (自我決定論)',
+                    '美感教育環境營造',
+                    '特教權益與內控機制',
+                    '性別平等事件預防'
+                ]
+            }
+        ];
+
+        // Simulation Q&A Data (Section 3)
+        const qaData = {
+            1: {
+                category: '課程領導',
+                question: '教育部推動「班班有網路，生生用平板」政策，請問您在學校行政端、教師端與家長端應如何推動，以發揮政策之最佳效益？',
+                step1: '教育部推動之「中小學數位學習精進方案」，其核心目標非僅止於硬體設備之建置，更在於促成教學典範之轉移。作為學校領導者，本人將秉持「科技輔助自主學習」(Self-Regulated Learning, SRL) 之核心理念，透過行政支援、教師增能與親師協作三方面並進，以實現「數位公平」之教育願景。',
+                step2: '本題核心在於「數位轉型」與「公平教育」。依據 TPACK 理論與自主學習理論，科技應作為鷹架而非主體。政策基礎為「中小學數位學習精進方案」，強調載具管理、數位內容與教學指引之落實。',
+                step3: '<ul class="list-disc pl-5 space-y-1"><li><strong>行政端：</strong>優化基礎建設 (Wi-Fi 6, MDM)、訂定《數位載具借用辦法》、整合校本數位教材庫 (因材網, Cool English)。</li><li><strong>教師端：</strong>分層增能 (A1/A2 講師)、轉化教學模式 (四學模式)、建立數位 PLC 社群共備。</li><li><strong>家長端：</strong>舉辦說明會溝通定位 (工具非玩具)、指導設定「家長監護」、宣導資訊倫理與視力保健。</li></ul>',
+                step4: '推動數位學習之關鍵要素在於「人」而非載具。本人將致力於打造智慧校園環境，運用科技作為縮短城鄉差距之槓桿，具體實踐「成就每一個孩子」之教育理想。'
+            },
+            2: {
+                category: '課程領導',
+                question: '因應十二年國教，校長應如何引導學校發展符應 108 課綱精神並結合 SDGs 之校本特色課程？',
+                step1: '108 課綱強調「自發、互動、共好」之核心素養，而聯合國永續發展目標 (SDGs) 則提供了接軌國際之議題框架。校長作為首席課程領導者，應致力於連結真實生活情境，發展兼具「在地行動」與「國際思維」之校本課程。',
+                step2: '理論基礎結合了「全球在地化 (Glocalization)」與「素養導向教學」。政策依據為 108 課綱之「校訂課程」彈性學習時間運用，以及國際教育 2.0 之推動。',
+                step3: '<ul class="list-disc pl-5 space-y-1"><li><strong>願景對接：</strong>盤點社區資源 (生態/文化)，對應 SDGs 目標 (如 SDGs 11 永續城鄉)，確立發展主軸。</li><li><strong>模組化設計：</strong>運用彈性學習時間設計「主題式探究」，繪製三年一貫螺旋式課程地圖。</li><li><strong>賦權行動：</strong>成立跨領域社群 (Design Thinking)、推動服務學習 (做中學)，落實解決真實問題。</li></ul>',
+                step4: '校本課程之精髓在於引導學生「解決真實問題」。透過 SDGs 之導入，學校不僅能豐富課綱之內涵，更能培育學生成為具備社會責任感與全球視野之現代公民。'
+            },
+            3: {
+                category: '行政管理',
+                question: '校長接獲家長投訴某資深教師教學不力、態度欠佳且訴諸民代。請評析校長應有之處理作為及精進之道。',
+                step1: '處理不適任教師乃校長職務中最具挑戰性之任務，必須在「保障學生受教權」與「維護教師工作權」之間取得平衡。核心準則在於：程序完備 (Due Process)、證據確鑿及輔導真誠。',
+                step2: '法律依據為最新修正之《教師法》及《高級中等以下學校教師解聘不續聘停聘或資遣辦法》。核心機制為「校園事件處理會議」(校事會議)。',
+                step3: '<ul class="list-disc pl-5 space-y-1"><li><strong>啟動機制：</strong>獲報 5 日內召開校事會議，決議受理並組調查小組 (關鍵變革，嚴禁私了)。</li><li><strong>分軌處理：</strong>教學不力者提報教評會並進入輔導期；違反師道/霸凌者直接審議。</li><li><strong>領導作為：</strong>蒐證具體化 (入班觀課數據)、建立防火牆 (面對民代堅持法制、安撫校內)、法律支援 (申請涉訟輔助)。</li></ul>',
+                step4: '「不適任教師退場機制」之初衷非為懲罰，而是守護受教權。本人將展現道德勇氣，堅持依法行政，重建親師生對學校品質之信任。'
+            },
+            4: {
+                category: '領導理論',
+                question: '參考 O 校長親自示範清掃廁所之案例，請從「道德領導」角度分析其意涵，並說明校長如何透過身教重塑校園文化。',
+                step1: 'Sergiovanni 提出之「道德領導」(Moral Leadership) 強調領導者應透過價值觀、信念與榜樣來感召成員。O 校長之作為實為「領導的替代物」之具體展現，旨在將外在規範內化為成員之自律行為。',
+                step2: '分析架構為道德領導的三層次：手的領導 (行政管理)、頭的領導 (理念建構)、心的領導 (價值共享)。重點在於將個人行為轉化為組織文化。',
+                step3: '<ul class="list-disc pl-5 space-y-1"><li><strong>以身作則 (Modeling)：</strong>打破科層階級，傳遞「細節即品質」價值觀，建立信服力。</li><li><strong>符號與儀式：</strong>透過表揚、競賽 (創意廁所)，將抽象品德轉化為可見儀式。</li><li><strong>敘事領導 (Storytelling)：</strong>持續詮釋行動背後的教育意涵，強化認同，形成集體文化。</li></ul>',
+                step4: '道德領導之核心在於「感動」與「喚醒」。本人將致力於實踐「僕人領導」精神，透過服務與身教，喚醒師生之內在動機，建立溫馨高效之校園。'
+            },
+            5: {
+                category: '學生事務',
+                question: '針對教師反應學生學習動機低落之現象，請就 Ryan & Deci 之「自我決定論」(SDT) 觀點提出具體解決方案。',
+                step1: '依據 Ryan & Deci 之自我決定論，解決學習動機低落之關鍵，在於有效滿足學生之三大心理需求：自主感 (Autonomy)、勝任感 (Competence) 與歸屬感 (Relatedness)，將外在驅動轉化為內在建構。',
+                step2: '理論核心：動機光譜 (無動機 -> 外在動機 -> 內在動機)。關鍵在於環境是否支持心理需求的滿足。',
+                step3: '<ul class="list-disc pl-5 space-y-1"><li><strong>提升自主感：</strong>釋放選擇權 (選題、評量方式)，讓學生感知學習是基於自身選擇。</li><li><strong>增強勝任感：</strong>實施鷹架教學與差異化評量，設定 ZPD 目標，提供具體正向回饋，打破習得無助。</li><li><strong>建立歸屬感：</strong>營造支持性班級氣氛，推動合作學習，強化師生/同儕連結。</li></ul>',
+                step4: '提升動機需仰賴環境滋養。本人將帶領團隊從課程設計與班級經營著手，滿足學生心理需求，點燃其內在學習熱情。'
+            }
+        };
+
+        // --- UI Rendering ---
+
+        // Render Domain Cards
+        function renderDomains() {
+            const grid = document.getElementById('domainGrid');
+            grid.innerHTML = domainData.map(d => `
+                <div class="bg-white p-6 rounded-xl border ${d.border} shadow-sm card-hover cursor-pointer" onclick="showDomainDetail('${d.id}')">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-3xl">${d.icon}</span>
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full ${d.color}">點擊查看</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-stone-800 mb-2">${d.title}</h3>
+                    <p class="text-sm text-stone-500 line-clamp-2">${d.trend}</p>
+                </div>
+            `).join('');
+        }
+
+        // Show Domain Details
+        function showDomainDetail(id) {
+            const data = domainData.find(d => d.id === id);
+            const detailArea = document.getElementById('domainDetail');
+            
+            document.getElementById('detailTitle').textContent = data.icon + ' ' + data.title;
+            document.getElementById('detailTrend').textContent = data.trend;
+            document.getElementById('detailIssues').innerHTML = data.issues.map(i => `<li class="flex items-start"><span class="text-teal-500 mr-2">•</span>${i}</li>`).join('');
+            
+            detailArea.classList.remove('hidden');
+            // Scroll slightly to details
+            detailArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeDetail() {
+            document.getElementById('domainDetail').classList.add('hidden');
+        }
+
+        // --- Charts Initialization ---
+        function initCharts() {
+            // Chart 1: Topic Importance (Bar Chart)
+            const topicCtx = document.getElementById('topicChart').getContext('2d');
+            new Chart(topicCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['課程領導', '行政管理', '領導理論', '學生事務'],
+                    datasets: [{
+                        label: '議題比重',
+                        data: [35, 25, 25, 15], // Estimated weights based on analysis
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.6)', // Blue
+                            'rgba(239, 68, 68, 0.6)',  // Red
+                            'rgba(245, 158, 11, 0.6)', // Amber
+                            'rgba(16, 185, 129, 0.6)'  // Emerald
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(16, 185, 129, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 40 }
+                    }
+                }
+            });
+
+            // Chart 2: Competency Radar
+            const compCtx = document.getElementById('competencyChart').getContext('2d');
+            new Chart(compCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['法律知能', '課程設計', '危機處理', '道德操守', '科技素養', '溝通協調'],
+                    datasets: [{
+                        label: '關鍵能力需求',
+                        data: [90, 85, 80, 85, 75, 88],
+                        backgroundColor: 'rgba(13, 148, 136, 0.2)', // Teal
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        pointBackgroundColor: 'rgba(13, 148, 136, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(13, 148, 136, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Simulation Logic ---
+
+        function loadQuestion() {
+            const select = document.getElementById('questionSelect');
+            const val = select.value;
+            const placeholder = document.getElementById('simPlaceholder');
+            const simArea = document.getElementById('simArea');
+
+            if (val === "0") {
+                placeholder.classList.remove('hidden');
+                simArea.classList.add('hidden');
+                return;
+            }
+
+            const data = qaData[val];
+            placeholder.classList.add('hidden');
+            simArea.classList.remove('hidden');
+
+            // Populate Content
+            document.getElementById('simCategory').textContent = data.category;
+            document.getElementById('simQuestion').textContent = data.question;
+            document.getElementById('step1').innerHTML = data.step1; // Using innerHTML for bold tags
+            document.getElementById('step2').innerHTML = data.step2;
+            document.getElementById('step3').innerHTML = data.step3;
+            document.getElementById('step4').innerHTML = data.step4;
+
+            // Reset view (collapse all)
+            collapseAll();
+        }
+
+        function toggleStep(stepId) {
+            const el = document.getElementById(stepId);
+            const icon = document.getElementById('icon-' + stepId);
+            
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.textContent = '-';
+            } else {
+                el.classList.add('hidden');
+                icon.textContent = '+';
+            }
+        }
+
+        function expandAll() {
+            ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+                document.getElementById(id).classList.remove('hidden');
+                document.getElementById('icon-' + id).textContent = '-';
+            });
+        }
+
+        function collapseAll() {
+            ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById('icon-' + id).textContent = '+';
+            });
+        }
+
+        // --- Utility ---
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDomains();
+            initCharts();
+        });
+
+    </script>
+</body>
+</html>
